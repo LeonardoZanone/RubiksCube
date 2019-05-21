@@ -26,8 +26,7 @@ public class Main extends SimpleApplication {
     private boolean isRunning = true;
     
     Rubik[] cubes = new Rubik[2];
-    float rotation = 0;
-    boolean test = true;
+    boolean rotating = false;
 
     @Override
     public void simpleInitApp() {
@@ -58,42 +57,37 @@ public class Main extends SimpleApplication {
  
     @Override
     public void simpleUpdate(float tpf) {
-        if(test)
+        if(cubes[0].faces.get(0).rotate)
         {
-            rotation += tpf;
-            for(Node n : cubes[0].faces.get(0))
+            cubes[0].faces.get(0).rotation += tpf;
+            for(Node n : cubes[0].faces.get(0).nodes)
             {
-                n.rotate(0f, 0f, tpf);
-//                n.setLocalRotation(new Matrix3f( (float) Math.cos(rotation), -(float) Math.sin(rotation), 0f, (float) Math.sin(rotation), 0f, 0f, 0f, 0f, 1f));
+                if(cubes[0].faces.get(0).clockWise)
+                    n.rotate(0f, 0f, tpf);
+                else
+                    n.rotate(0f, 0f, -tpf);
             }
-            if(rotation >= Math.PI / 2)
-                test = false;
+            if(cubes[0].faces.get(0).rotation >= Math.PI / 2)
+            {
+                cubes[0].faces.get(0).rotate = false;
+                cubes[0].faces.get(0).rotation = 0;
+                rotating = false;
+            }
         }
-        else
+        else if(cubes[0].faces.get(1).rotate)
         {
-            rotation += tpf;
-            for(Node n : cubes[0].faces.get(1))
+            cubes[0].faces.get(1).rotation += tpf;
+            for(Node n : cubes[0].faces.get(1).nodes)
             {
                 n.rotate(0f, tpf, 0f);
-//                n.setLocalRotation(new Matrix3f( (float) Math.cos(rotation), -(float) Math.sin(rotation), 0f, (float) Math.sin(rotation), 0f, 0f, 0f, 0f, 1f));
             }
-            if(rotation >= Math.PI)
-                test = true;
+            if(cubes[0].faces.get(1).rotation >= Math.PI / 2)
+            {
+                cubes[0].faces.get(1).rotate = false;
+                cubes[0].faces.get(1).rotation = 0;
+                rotating = false;
+            }
         }
-        
-//        if(test) {
-//            cubes[0].rotateFace(0, true, tpf);
-//            test = false;
-//        }
-//        rotation+=tpf;
-//        cubes[0].node.rotate(tpf, 0f, 0f);
-//        Matrix3f mat = new Matrix3f();
-//        for(Rubik cube : cubes) {
-//            cubes[0].node.setLocalRotation(new Matrix3f(0, -1, 0, 1, 0, 0, 0, 0, 1));
-//            if(rotation < 1)
-//                cube.faces[0].rotate(0f, 0f, tpf);
-//
-//        }
     }
 
     @Override
@@ -122,16 +116,19 @@ public class Main extends SimpleApplication {
     private final ActionListener actionListener = new ActionListener() {
         @Override
         public void onAction(String name, boolean keyPressed, float tpf) {
-            if (isRunning && !keyPressed) {
+            if (isRunning && !keyPressed && !rotating) {
                 switch(name){
                     case "E":
-                        cubes[0].rotateFace(0, true, 0);
+                        cubes[0].rotateFace(0, true);
+                        rotating = true;
                         break;
                     case "R":
-                        cubes[0].rotateFace(1, true, 0);
+                        cubes[0].rotateFace(1, true);
+                        rotating = true;
                         break;
                     case "D":
-                        cubes[0].rotateFace(2, true, 0);
+                        cubes[0].rotateFace(2, true);
+                        rotating = true;
                         break;
                     case "F":
                         
