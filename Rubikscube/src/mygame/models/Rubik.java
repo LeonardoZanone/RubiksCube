@@ -8,6 +8,7 @@ package mygame.models;
 import com.jme3.asset.AssetManager;
 import com.jme3.material.Material;
 import com.jme3.math.ColorRGBA;
+import com.jme3.math.Quaternion;
 import com.jme3.scene.Node;
 import com.jme3.scene.Spatial;
 import java.util.ArrayList;
@@ -25,9 +26,10 @@ public class Rubik {
     public Material[] materials = new Material[54]; 
 
     
-    public Rubik(AssetManager assetManager, ColorRGBA [][] state) {
+    public Rubik(AssetManager assetManager, ColorRGBA [][] state, Quaternion rotation) {
 
         currentState = state;
+        node.getLocalRotation().set(rotation);
         for (int i = 0; i < 6; i++) {
             faces.add(new Face(i));
         }

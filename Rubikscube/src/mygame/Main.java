@@ -6,6 +6,7 @@ import com.jme3.input.controls.ActionListener;
 import com.jme3.input.controls.AnalogListener;
 import com.jme3.input.controls.KeyTrigger;
 import com.jme3.math.ColorRGBA;
+import com.jme3.math.Quaternion;
 import com.jme3.renderer.RenderManager;
 import mygame.models.Enums;
 import mygame.models.Rubik;
@@ -29,6 +30,7 @@ public class Main extends SimpleApplication {
     Rubik[] cubes = new Rubik[2];
     ColorRGBA[][] currentState = new ColorRGBA[6][9];
     boolean rotating = false;
+    boolean randomize = false;
 
     @Override
     public void simpleInitApp() {
@@ -36,24 +38,10 @@ public class Main extends SimpleApplication {
         flyCam.setEnabled(false);
         initKeys();
 
-        for (int i = 0; i < 6; i++) {
-            for (int j = 0; j < 9; j++) {
-                if(i == Enums.FacesColors.BLUE)
-                    currentState[i][j] = ColorRGBA.Blue;
-                if(i == Enums.FacesColors.WHITE)
-                    currentState[i][j] = ColorRGBA.White;
-                if(i == Enums.FacesColors.RED)
-                    currentState[i][j] = ColorRGBA.Red;
-                if(i == Enums.FacesColors.GREEN)
-                    currentState[i][j] = ColorRGBA.Green;
-                if(i == Enums.FacesColors.YELLOW)
-                    currentState[i][j] = ColorRGBA.Yellow;
-                if(i == Enums.FacesColors.ORANGE)
-                    currentState[i][j] = ColorRGBA.Orange;
-            }
-        }
+        currentState = resetCube();
         
-        cubes[0] = new Rubik(assetManager, currentState);
+        cubes[0] = new Rubik(assetManager, currentState, new Quaternion());
+        cubes[0].node.rotate((float) Math.PI / 6, (float) Math.PI / 6, (float) Math.PI / 6);
         cubes[0].node.scale(0.5f);
 
         rootNode.attachChild(cubes[0].node);
@@ -66,11 +54,19 @@ public class Main extends SimpleApplication {
                 rotating = cubes[0].faces.get(i).rotateFace(tpf);
                 if(!rotating) {
                     rootNode.detachAllChildren();
-                    cubes[0] = new Rubik(assetManager, currentState);
+                    cubes[0] = new Rubik(assetManager, currentState, cubes[0].node.getLocalRotation());
                     cubes[0].node.scale(0.5f);
                     rootNode.attachChild(cubes[0].node);
                 }
             }
+        }
+        
+        if(randomize && !rotating)
+        {
+            double rand = Math.random();
+            int faceToRotate = (int) (rand * 6);
+            currentState = cubes[0].rotateFace(faceToRotate, ((faceToRotate * Math.random()) % 2) == 0 );
+            rotating = true;
         }
 
     }
@@ -93,20 +89,30 @@ public class Main extends SimpleApplication {
         inputManager.addMapping("G", new KeyTrigger(KeyInput.KEY_G)); //Move a parte da frente no sentido anti-horário
         inputManager.addMapping("Y", new KeyTrigger(KeyInput.KEY_Y)); //Move a parte da traz no sentido horário
         inputManager.addMapping("H", new KeyTrigger(KeyInput.KEY_H)); //Move a parte da traz no sentido anti-horário
+        inputManager.addMapping("Reset", new KeyTrigger(KeyInput.KEY_RETURN)); //Coloca o cubo no estado original
+        inputManager.addMapping("Randomize", new KeyTrigger(KeyInput.KEY_TAB)); //Faz movimentos aleatórios no cubo
+        inputManager.addMapping("ResetPosition", new KeyTrigger(KeyInput.KEY_A)); //Coloca o cubo na posição original
 
         inputManager.addMapping("Direita", new KeyTrigger(KeyInput.KEY_RIGHT)); //Rotaciona o cubo para a direita
         inputManager.addMapping("Esquerda", new KeyTrigger(KeyInput.KEY_LEFT)); //Rotaciona o cubo para a esquerda
         inputManager.addMapping("Cima", new KeyTrigger(KeyInput.KEY_UP)); //Rotaciona o cubo para cima
         inputManager.addMapping("Baixo", new KeyTrigger(KeyInput.KEY_DOWN)); //Rotaciona o cubo para baixo
 
-        inputManager.addListener(actionListener, "E", "R", "D", "F", "I", "K", "O", "L", "T", "G", "Y", "H");
+        inputManager.addListener(actionListener, "E", "R", "D", "F", "I", "K", "O", "L", "T", "G", "Y", "H", "Reset", "Randomize", "ResetPosition");
         inputManager.addListener(analogListener, "Direita", "Esquerda", "Cima", "Baixo");
     }
 
     private final ActionListener actionListener = new ActionListener() {
         @Override
         public void onAction(String name, boolean keyPressed, float tpf) {
-            if (isRunning && !keyPressed && !rotating) {
+            if(isRunning && !keyPressed)
+            {
+                if(name.equals("Randomize"))
+                    randomize = !randomize;
+                if(name.equals("ResetPosition"))
+                    cubes[0].node.getLocalRotation().set(new Quaternion());
+            }
+            if (isRunning && !keyPressed && !rotating && !randomize) {
                 switch (name) {
                     case "E":
                         currentState = cubes[0].rotateFace(Enums.CubeFaces.UP, true);
@@ -156,6 +162,13 @@ public class Main extends SimpleApplication {
                         currentState = cubes[0].rotateFace(Enums.CubeFaces.BACK, false);
                         rotating = true;
                         break;
+                    case "Reset":
+                        currentState = resetCube();
+                        rootNode.detachAllChildren();
+                        cubes[0] = new Rubik(assetManager, currentState, cubes[0].node.getLocalRotation());
+                        cubes[0].node.scale(0.5f);
+                        rootNode.attachChild(cubes[0].node);
+                        break;
                 }
             }
         }
@@ -182,5 +195,27 @@ public class Main extends SimpleApplication {
 
         }
     };
+    
+    private ColorRGBA[][] resetCube()
+    {
+        ColorRGBA[][] initState = new ColorRGBA[6][9];
+        for (int i = 0; i < 6; i++) {
+            for (int j = 0; j < 9; j++) {
+                if(i == Enums.FacesColors.BLUE)
+                    initState[i][j] = ColorRGBA.Blue;
+                if(i == Enums.FacesColors.WHITE)
+                    initState[i][j] = ColorRGBA.White;
+                if(i == Enums.FacesColors.RED)
+                    initState[i][j] = ColorRGBA.Red;
+                if(i == Enums.FacesColors.GREEN)
+                    initState[i][j] = ColorRGBA.Green;
+                if(i == Enums.FacesColors.YELLOW)
+                    initState[i][j] = ColorRGBA.Yellow;
+                if(i == Enums.FacesColors.ORANGE)
+                    initState[i][j] = ColorRGBA.Orange;
+            }
+        }
+        return initState;
+    }
 
 }
